@@ -178,28 +178,38 @@
     .leaflet-control-attribution { background: rgba(11, 34, 23, 0.85) !important; color: var(--muted); }
     .leaflet-control-attribution a { color: var(--brass); }
 
-    /* Pins */
+    /* Pins: a 28px visible circle (about the size of a Google Maps place icon)
+       inside a transparent 44px tap target */
     .pin {
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
+      cursor: pointer;
+    }
+    .pin-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
       border: 2px solid var(--map);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--on-accent);
       font-family: var(--sans);
-      font-size: 0.875rem;
+      font-size: 0.6875rem;
       font-weight: 600;
-      letter-spacing: -0.01em;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-      cursor: pointer;
+      letter-spacing: -0.02em;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
       transition: box-shadow 0.15s;
     }
-    .pin--gold { background: var(--gold); }
-    .pin--silver { background: var(--silver); }
-    .pin--bronze { background: var(--bronze); }
-    .pin--tbc { background: var(--line); color: var(--muted); font-size: 0.75rem; font-weight: 500; font-style: italic; }
-    .pin.is-selected { box-shadow: 0 0 0 3px var(--ink), 0 4px 14px rgba(0, 0, 0, 0.55); }
-    .pin:focus-visible { outline: 2px solid var(--brass); outline-offset: 5px; }
+    .pin--gold .pin-dot { background: var(--gold); }
+    .pin--silver .pin-dot { background: var(--silver); }
+    .pin--bronze .pin-dot { background: var(--bronze); }
+    .pin--tbc .pin-dot { background: var(--line); color: var(--muted); font-size: 0.625rem; font-weight: 500; font-style: italic; }
+    .pin.is-selected .pin-dot { box-shadow: 0 0 0 3px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.55); }
+    .pin:focus-visible { outline: none; }
+    .pin:focus-visible .pin-dot { outline: 2px solid var(--brass); outline-offset: 5px; }
 
     /* ---------- Panel: selected restaurant ---------- */
     .eyebrow {
@@ -334,7 +344,7 @@
 
   <header class="site-header">
     <div class="brand">
-      <img src="/favicon.png" width="52" height="52" alt="">
+      <img src="favicon.png" width="52" height="52" alt="">
       <div>
         <h1>The Nines</h1>
         <p>Restaurant map</p>
@@ -344,10 +354,10 @@
     <nav class="controls" aria-label="Map controls">
       <div class="group" role="group" aria-label="Scoring profile">
         <button class="group-label-btn" id="profileHelpBtn" aria-expanded="false" aria-controls="profileTooltip">Profile ⓘ</button>
-        <button class="toggle-btn active" aria-pressed="true" data-mode="total_food" data-label="Food+">Food+</button>
-        <button class="toggle-btn" aria-pressed="false" data-mode="total_wine" data-label="Wine+">Wine+</button>
-        <button class="toggle-btn" aria-pressed="false" data-mode="total_atmosphere" data-label="Atmosphere+">Atmosphere+</button>
-        <button class="toggle-btn" aria-pressed="false" data-mode="total_neutral" data-label="Neutral">Neutral</button>
+        <button class="toggle-btn active" aria-pressed="true" data-mode="overall" data-label="Overall">Overall</button>
+        <button class="toggle-btn" aria-pressed="false" data-mode="plate" data-label="Food">Food</button>
+        <button class="toggle-btn" aria-pressed="false" data-mode="bottles" data-label="Wine">Wine</button>
+        <button class="toggle-btn" aria-pressed="false" data-mode="atmosphere" data-label="Atmosphere">Atmosphere</button>
       </div>
       <div class="group" role="group" aria-label="Season">
         <span class="group-label">Season</span>
@@ -361,10 +371,10 @@
   </header>
 
   <div class="profile-tooltip" id="profileTooltip" role="tooltip">
-    <div class="tooltip-row"><span class="tooltip-key">Food+</span><span class="tooltip-val">Gives double weight to food in the average rating</span></div>
-    <div class="tooltip-row"><span class="tooltip-key">Wine+</span><span class="tooltip-val">Gives double weight to wine in the average rating</span></div>
-    <div class="tooltip-row"><span class="tooltip-key">Atmosphere+</span><span class="tooltip-val">Gives double weight to atmosphere in the average rating</span></div>
-    <div class="tooltip-row"><span class="tooltip-key">Neutral</span><span class="tooltip-val">Treats food, wine and atmosphere equally</span></div>
+    <div class="tooltip-row"><span class="tooltip-key">Overall</span><span class="tooltip-val">Food counts double: (2 × plate + bottles + atmosphere) ÷ 4</span></div>
+    <div class="tooltip-row"><span class="tooltip-key">Food</span><span class="tooltip-val">The plate score on its own</span></div>
+    <div class="tooltip-row"><span class="tooltip-key">Wine</span><span class="tooltip-val">The bottles score on its own</span></div>
+    <div class="tooltip-row"><span class="tooltip-key">Atmosphere</span><span class="tooltip-val">The atmosphere score on its own</span></div>
   </div>
 
   <main class="layout">
@@ -455,7 +465,7 @@
       const scoreText = score ? parseFloat(score).toFixed(1) : 'tbc';
       return L.divIcon({
         className: `pin pin--${tier(score)}${isSelected ? ' is-selected' : ''}`,
-        html: scoreText,
+        html: `<span class="pin-dot">${scoreText}</span>`,
         iconSize: [44, 44], iconAnchor: [22, 22]
       });
     }
@@ -486,8 +496,8 @@
       });
     }
 
-    let currentMode = 'total_food';
-    let currentLabel = 'Food+';
+    let currentMode = 'overall';
+    let currentLabel = 'Overall';
     let currentSeason = 'All';
     let allRestaurants = [];
     let markers = [];
@@ -500,8 +510,24 @@
     const topFiveMeta = document.getElementById('topFiveMeta');
     const isPhone = () => window.matchMedia('(max-width: 700px)').matches;
 
-    function scoreOf(r) {
-      return r[currentMode] && r[currentMode] !== '' ? parseFloat(r[currentMode]) : null;
+    // Raw column value as a number, or null when blank
+    function num(v) {
+      const n = v && v.trim() !== '' ? parseFloat(v) : NaN;
+      return isNaN(n) ? null : n;
+    }
+
+    // Score for the selected button. Overall = (2 × plate + bottles + atmosphere) ÷ 4,
+    // and needs all three raw scores. The other buttons use one raw column.
+    function scoreOf(r, mode = currentMode) {
+      if (mode === 'overall') {
+        const p = num(r.plate), b = num(r.bottles), a = num(r.atmosphere);
+        return p === null || b === null || a === null ? null : (2 * p + b + a) / 4;
+      }
+      return num(r[mode]);
+    }
+
+    function hasRatings(r) {
+      return num(r.plate) !== null || num(r.bottles) !== null || num(r.atmosphere) !== null;
     }
 
     function renderDetail() {
@@ -513,13 +539,12 @@
         </div>`;
         return;
       }
-      const hasTotals = r.total_food && r.total_food !== '';
       const score = scoreOf(r);
 
-      const ratingsHtml = hasTotals ? `
+      const ratingsHtml = hasRatings(r) ? `
         <div class="score-block">
           <span class="eyebrow">${esc(currentLabel)} score</span>
-          <span class="score-big t-${tier(score)}">${fmt(r[currentMode])}</span>
+          <span class="score-big t-${tier(score)}">${score === null ? '—' : score.toFixed(2)}</span>
         </div>
         <div class="bars">
           ${bar('Plate', r.plate)}
@@ -601,7 +626,7 @@
       if (selected && !filtered.includes(selected)) selected = null;
       filtered.forEach(r => {
         if (!r.lat || !r.lng) return;
-        const score = r[currentMode] && r[currentMode] !== '' ? parseFloat(r[currentMode]) : null;
+        const score = scoreOf(r);
         const isSel = r === selected;
         const marker = L.marker([parseFloat(r.lat), parseFloat(r.lng)], {
           icon: makeIcon(score, isSel),
