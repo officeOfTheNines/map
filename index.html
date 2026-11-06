@@ -254,12 +254,15 @@
     .menu-btn {
       display: flex; align-items: center; justify-content: center;
       width: 100%; min-height: 44px; margin-top: 22px;
-      border: 1px solid var(--line-ctl); border-radius: 999px;
-      background: transparent; color: var(--ink);
-      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--gold); border-radius: 999px;
+      background: var(--gold); color: var(--on-accent);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
       transition: border-color 0.15s, background-color 0.15s;
     }
-    .menu-btn:hover { border-color: var(--brass); background: rgba(200, 163, 95, 0.08); }
+    .menu-btn:hover { border-color: var(--brass); background: var(--brass); }
+
+    /* Phone-only pieces (hidden on bigger screens) */
+    .picker-btn, .sheet-bar { display: none; }
     .no-menu { color: var(--muted); font-size: 0.8125rem; font-style: italic; text-align: center; margin-top: 22px; }
 
     /* ---------- Panel: top five ---------- */
@@ -312,30 +315,140 @@
 
     /* ---------- Phone ---------- */
     @media (max-width: 700px) {
-      body { height: auto; min-height: 100vh; }
-      .site-header { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 10px; padding: 12px 0 8px; min-width: 0; }
-      .brand { padding: 0 16px; }
-      .brand img { width: 44px; height: 44px; }
-      .brand h1 { font-size: 1.5rem; }
-      .controls {
-        margin-left: 0;
-        min-width: 0;
-        max-width: 100%;
+      body { overflow: hidden; }
+
+      /* One-line header: logo, name, and the picked profile/season */
+      .site-header {
+        position: relative;
+        z-index: 1500;
         flex-wrap: nowrap;
-        justify-content: flex-start;
-        overflow-x: auto;
-        padding: 4px 16px 6px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
+        gap: 10px;
+        padding: 6px 12px;
       }
-      .controls::-webkit-scrollbar { display: none; }
-      .group { flex-shrink: 0; }
-      .layout { display: block; }
-      .map-wrap { height: 52vh; min-height: 300px; }
-      .panel { border-left: 0; border-top: 1px solid var(--line); padding: 20px 16px 28px; overflow: visible; }
-      .detail-name { font-size: 1.85rem; }
-      .score-big { font-size: 3.25rem; }
+      .brand { gap: 10px; min-width: 0; }
+      .brand img { width: 32px; height: 32px; }
+      .brand h1 { font-size: 1.3rem; white-space: nowrap; }
+      .brand p { display: none; }
+      .picker-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+        min-height: 44px;
+        padding: 0 14px 0 16px;
+        border: 1px solid var(--brass);
+        border-radius: 999px;
+        background: var(--brass);
+        color: var(--on-accent);
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .picker-caret { font-size: 0.7rem; transition: transform 0.2s; }
+      .site-header.picker-open .picker-caret { transform: rotate(180deg); }
+
+      /* All buttons live in a dropdown under the header */
+      .controls {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 12px 12px 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      }
+      .site-header.picker-open .controls { display: flex; }
+      .group { flex-wrap: wrap; }
+      .group + .group { padding-left: 0; border-left: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+      .group-label { min-width: 84px; }
+
+      /* Full-screen map */
+      .layout { display: block; position: relative; overflow: hidden; }
+      .map-wrap { position: absolute; inset: 0; }
       .legend { left: 8px; bottom: 8px; gap: 10px; padding: 6px 10px; font-size: 0.6875rem; }
+
+      /* Bottom sheet: hidden until a pin is tapped, then peeks; slide up to open */
+      .panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(100% - 16px);
+        z-index: 1100;
+        padding: 0 16px calc(28px + env(safe-area-inset-bottom));
+        border-left: 0;
+        border-top: 1px solid var(--line-ctl);
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        transform: translateY(100%);
+        visibility: hidden;
+        transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.28s;
+        overscroll-behavior: contain;
+      }
+      .panel.sheet-peek {
+        transform: translateY(calc(100% - var(--peek, 220px)));
+        visibility: visible;
+        transition-delay: 0s;
+        touch-action: none;
+      }
+      .panel.sheet-open {
+        transform: translateY(0);
+        visibility: visible;
+        transition-delay: 0s;
+        overflow-y: auto;
+      }
+      .panel.dragging { transition: none; }
+
+      .sheet-bar {
+        display: flex;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        margin: 0 -16px 4px;
+        padding: 0 4px 0 60px;
+        background: var(--bg);
+        touch-action: none;
+      }
+      .sheet-grab {
+        flex: 1;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: 0;
+        border-radius: 8px;
+        cursor: grab;
+      }
+      .sheet-grab span { width: 40px; height: 5px; border-radius: 999px; background: var(--line-ctl); }
+      .sheet-close {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        margin-left: 12px;
+        background: none;
+        border: 0;
+        border-radius: 50%;
+        color: var(--muted);
+        font-size: 1.1rem;
+        cursor: pointer;
+      }
+      .sheet-close:hover { color: var(--ink); }
+
+      .detail-name { font-size: 1.75rem; margin: 6px 0; }
+      .score-block { margin: 14px 0 16px; padding: 10px 0 12px; }
+      .score-big { font-size: 2.75rem; }
+      .ratings-tbc { margin-top: 14px; padding: 14px 0; }
       #menu-overlay { padding: 16px; }
     }
   </style>
@@ -351,7 +464,11 @@
       </div>
     </div>
 
-    <nav class="controls" aria-label="Map controls">
+    <button class="picker-btn" id="pickerBtn" type="button" aria-expanded="false" aria-controls="mapControls">
+      <span id="pickerLabel">Overall · All</span><span class="picker-caret" aria-hidden="true">▼</span>
+    </button>
+
+    <nav class="controls" id="mapControls" aria-label="Map controls">
       <div class="group" role="group" aria-label="Scoring profile">
         <button class="group-label-btn" id="profileHelpBtn" aria-expanded="false" aria-controls="profileTooltip">Profile ⓘ</button>
         <button class="toggle-btn active" aria-pressed="true" data-mode="overall" data-label="Overall">Overall</button>
@@ -387,7 +504,11 @@
       </div>
     </div>
 
-    <aside class="panel" aria-label="Selected restaurant">
+    <aside class="panel" id="panel" aria-label="Selected restaurant">
+      <div class="sheet-bar">
+        <button class="sheet-grab" id="sheetGrab" type="button" aria-label="Show more details"><span></span></button>
+        <button class="sheet-close" id="sheetClose" type="button" aria-label="Close">✕</button>
+      </div>
       <section id="detail" aria-live="polite"></section>
       <section class="top-five" aria-labelledby="topFiveTitle">
         <div class="top-five-title">
@@ -542,7 +663,7 @@
       const score = scoreOf(r);
 
       const ratingsHtml = hasRatings(r) ? `
-        <div class="score-block">
+        <div class="score-block peek-end">
           <span class="eyebrow">${esc(currentLabel)} score</span>
           <span class="score-big t-${tier(score)}">${score === null ? '—' : score.toFixed(2)}</span>
         </div>
@@ -550,7 +671,7 @@
           ${bar('Plate', r.plate)}
           ${bar('Bottles', r.bottles)}
           ${bar('Atmosphere', r.atmosphere)}
-        </div>` : `<p class="ratings-tbc">Ratings coming soon</p>`;
+        </div>` : `<p class="ratings-tbc peek-end">Ratings coming soon</p>`;
 
       const hasMenu = r.menu && r.menu.trim() !== '';
       const menuHtml = hasMenu
@@ -567,6 +688,7 @@
         ${menuHtml}`;
 
       if (hasMenu) document.getElementById('menuBtn').addEventListener('click', () => openMenu(r.menu, r.name));
+      updatePeek();
     }
 
     function renderTopFive() {
@@ -594,8 +716,8 @@
           <span class="top-name">${esc(r.name)}<span class="top-meta">${[r.season, r.month].filter(Boolean).map(esc).join(' · ')}</span></span>
           <span class="top-score t-${tier(s)}">${s.toFixed(1)}</span>`;
         btn.addEventListener('click', () => {
-          selectRestaurant(r, true);
-          if (isPhone()) document.querySelector('.map-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          selectRestaurant(r, !isPhone());
+          if (isPhone()) { setSheet('peek'); showPinAboveSheet(r); }
         });
         li.appendChild(btn);
         topFiveList.appendChild(li);
@@ -612,8 +734,128 @@
         marker.setZIndexOffset(on ? 1000 : 0);
       });
       topFiveItems.forEach(({ r: item, btn }) => btn.setAttribute('aria-current', String(item === r)));
-      if (pan && r.lat && r.lng) map.panTo([parseFloat(r.lat), parseFloat(r.lng)]);
+      if (pan && r && r.lat && r.lng) map.panTo([parseFloat(r.lat), parseFloat(r.lng)]);
       renderDetail();
+    }
+
+    // Tapping a pin: desktop fills the side panel; phone also slides the sheet up to "peek"
+    function onPinChosen(r) {
+      selectRestaurant(r);
+      if (isPhone()) { setSheet('peek'); showPinAboveSheet(r); }
+    }
+
+    // ---------- Phone bottom sheet ----------
+    const panel = document.getElementById('panel');
+    let sheetState = 'closed';   // closed | peek | open
+    let drag = null;
+    let justDragged = false;
+
+    function setSheet(state) {
+      sheetState = state;
+      panel.classList.toggle('sheet-peek', state === 'peek');
+      panel.classList.toggle('sheet-open', state === 'open');
+      if (state !== 'open') panel.scrollTop = 0;
+      document.getElementById('sheetGrab').setAttribute('aria-label', state === 'open' ? 'Show less' : 'Show more details');
+    }
+
+    function closeSheet() {
+      setSheet('closed');
+      selectRestaurant(null);
+    }
+
+    // The peek shows everything down to the big score
+    function updatePeek() {
+      const end = detailEl.querySelector('.peek-end');
+      if (!end) return;
+      const bottom = end.getBoundingClientRect().bottom - panel.getBoundingClientRect().top + panel.scrollTop;
+      panel.style.setProperty('--peek', Math.ceil(bottom + 4) + 'px');
+    }
+
+    function peekHeight() {
+      return parseFloat(getComputedStyle(panel).getPropertyValue('--peek')) || 220;
+    }
+
+    // Nudge the map so the chosen pin is not hidden behind the peeking sheet
+    function showPinAboveSheet(r) {
+      if (!r || !r.lat || !r.lng) return;
+      const size = map.getSize();
+      const visibleH = size.y - peekHeight();
+      const pt = map.latLngToContainerPoint([parseFloat(r.lat), parseFloat(r.lng)]);
+      if (pt.y > visibleH - 40 || pt.y < 40 || pt.x < 30 || pt.x > size.x - 30) {
+        map.panBy([pt.x - size.x / 2, pt.y - visibleH / 2]);
+      }
+    }
+
+    function sheetOffset() {
+      const h = panel.offsetHeight;
+      return sheetState === 'open' ? 0 : sheetState === 'peek' ? h - peekHeight() : h;
+    }
+
+    panel.addEventListener('pointerdown', e => {
+      if (!isPhone() || sheetState === 'closed' || e.target.closest('.sheet-close')) return;
+      if (sheetState === 'open' && !e.target.closest('.sheet-bar')) return; // let the content scroll
+      drag = { id: e.pointerId, y0: e.clientY, t0: sheetOffset(), moved: false, dy: 0 };
+    });
+    panel.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag.dy = e.clientY - drag.y0;
+      if (!drag.moved && Math.abs(drag.dy) > 6) {
+        drag.moved = true;
+        try { panel.setPointerCapture(e.pointerId); } catch (_) {}
+        panel.classList.add('dragging');
+      }
+      if (drag.moved) {
+        const t = Math.max(0, Math.min(panel.offsetHeight, drag.t0 + drag.dy));
+        panel.style.transform = `translateY(${t}px)`;
+      }
+    });
+    function endDrag(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      const { moved, dy } = drag;
+      drag = null;
+      if (!moved) return;
+      justDragged = true;
+      setTimeout(() => { justDragged = false; }, 0);
+      panel.classList.remove('dragging');
+      panel.style.transform = '';
+      if (dy < -50) setSheet('open');
+      else if (dy > 50) sheetState === 'open' ? setSheet('peek') : closeSheet();
+      else setSheet(sheetState);
+    }
+    panel.addEventListener('pointerup', endDrag);
+    panel.addEventListener('pointercancel', endDrag);
+
+    document.getElementById('sheetGrab').addEventListener('click', () => {
+      if (justDragged) return;
+      setSheet(sheetState === 'open' ? 'peek' : 'open');
+    });
+    document.getElementById('sheetClose').addEventListener('click', closeSheet);
+    // Tapping the peeking card (not a button) opens it fully
+    panel.addEventListener('click', e => {
+      if (justDragged || !isPhone() || sheetState !== 'peek' || e.target.closest('button')) return;
+      setSheet('open');
+    });
+    // Tapping empty map closes the sheet on phones
+    map.on('click', () => { if (isPhone() && sheetState !== 'closed') closeSheet(); });
+    window.addEventListener('resize', () => { if (!isPhone()) setSheet('closed'); else updatePeek(); });
+
+    // ---------- Phone header picker ----------
+    const header = document.querySelector('.site-header');
+    const pickerBtn = document.getElementById('pickerBtn');
+    function setPicker(open) {
+      header.classList.toggle('picker-open', open);
+      pickerBtn.setAttribute('aria-expanded', String(open));
+    }
+    pickerBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      setPicker(!header.classList.contains('picker-open'));
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#mapControls') && !e.target.closest('#pickerBtn')) setPicker(false);
+    });
+    map.on('click movestart', () => setPicker(false));
+    function updatePicker() {
+      document.getElementById('pickerLabel').textContent = `${currentLabel} · ${currentSeason}`;
     }
 
     function renderMarkers() {
@@ -634,19 +876,21 @@
           riseOnHover: true,
           zIndexOffset: isSel ? 1000 : 0
         }).addTo(map);
-        marker.on('click', () => selectRestaurant(r));
+        marker.on('click', () => onPinChosen(r));
         const el = marker.getElement();
         if (el) {
           el.setAttribute('role', 'button');
           el.setAttribute('aria-label', `${r.name}, ${score ? score.toFixed(1) : 'score to be confirmed'}`);
           el.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRestaurant(r); }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPinChosen(r); }
           });
         }
         markers.push({ marker, data: r });
       });
       renderDetail();
       renderTopFive();
+      updatePicker();
+      if (!selected && sheetState !== 'closed') setSheet('closed');
     }
 
     function setActive(selector, btn) {
