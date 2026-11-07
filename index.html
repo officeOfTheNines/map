@@ -366,9 +366,14 @@
         box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
       }
       .site-header.picker-open .controls { display: flex; }
-      .group { flex-wrap: wrap; }
+      /* Each group: its label on top, then all its buttons on one row */
+      .group { flex-wrap: wrap; gap: 6px; }
       .group + .group { padding-left: 0; border-left: 0; padding-top: 12px; border-top: 1px solid var(--line); }
-      .group-label { min-width: 84px; }
+      .group > .group-label,
+      .group > .group-label-btn { flex: 0 0 100%; margin: 0; text-align: left; }
+      .group > .group-label { padding: 2px 6px 4px; }
+      .group > .group-label-btn { min-height: 32px; padding: 0 6px; }
+      .group > .toggle-btn { flex: 1 1 0; min-width: 0; padding: 0 6px; }
 
       /* Full-screen map */
       .layout { display: block; position: relative; overflow: hidden; }
