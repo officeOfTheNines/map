@@ -565,6 +565,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script>
+    // Which club this map belongs to (same ids as the members site: 1 = The Nines, 2 = Les Ronds).
+    // The map is public for now; later, members of this club may see extra detail.
+    const CLUB_ID = 1; // The Nines
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN3zApwLVbIyyNRRr0um-5KPXALnqQT53qOehiFrpCvJfFAVfEZw3yFYLet8iisqmRPeOt1BDiYhb-/pub?output=csv';
 
     // Profile tooltip toggle
@@ -648,6 +651,8 @@
         const vals = line.split(',');
         const obj = {};
         headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+        // every restaurant carries its club (a club_id column in the sheet wins, if one is added)
+        obj.club_id = Number(obj.club_id) || CLUB_ID;
         return obj;
       });
     }
