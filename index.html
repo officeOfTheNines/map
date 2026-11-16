@@ -53,6 +53,27 @@
       border-bottom: 1px solid var(--line);
       flex-wrap: wrap;
     }
+    /* Link back to the members site (top left) */
+    .member-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid var(--line-ctl);
+      border-radius: 999px;
+      color: var(--ink);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+    .member-link:hover { border-color: var(--brass); background: rgba(200, 163, 95, 0.08); }
+    .member-link:focus-visible { outline-offset: 3px; }
+    .member-link .short { display: none; }
+
     .brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
     .brand img { width: 52px; height: 52px; display: block; }
     .brand h1 { font-family: var(--serif); font-weight: 600; font-size: 1.75rem; line-height: 1; letter-spacing: 0.01em; }
@@ -314,6 +335,9 @@
     #menu-frame { width: 100%; max-width: 860px; flex: 1; max-height: 80vh; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 
     /* ---------- Phone ---------- */
+    @media (max-width: 420px) {
+      .brand h1 { display: none; }
+    }
     @media (max-width: 700px) {
       body { overflow: hidden; }
 
@@ -325,6 +349,9 @@
         gap: 10px;
         padding: 6px 12px;
       }
+      .member-link { padding: 0 12px; }
+      .member-link .full { display: none; }
+      .member-link .short { display: inline; }
       .brand { gap: 10px; min-width: 0; }
       .brand img { width: 32px; height: 32px; }
       .brand h1 { font-size: 1.3rem; white-space: nowrap; }
@@ -461,6 +488,9 @@
 <body>
 
   <header class="site-header">
+    <a class="member-link" href="https://site.thenines.club/members/">
+      <span aria-hidden="true">←</span><span class="full">Member area</span><span class="short">Members</span>
+    </a>
     <div class="brand">
       <img src="favicon.png" width="52" height="52" alt="">
       <div>
